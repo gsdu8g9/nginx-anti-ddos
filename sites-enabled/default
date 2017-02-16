@@ -1,0 +1,36 @@
+        server {
+        listen 80 default;
+        server_name _;
+        root /usr/share/nginx/www;
+        index index.php;
+
+        location / {
+          try_files $uri $uri/ =404;
+          limit_conn conn_limit_per_ip 50;
+        }
+        
+        # Make PHP Work
+        location ~ \.php$ {
+                include snippets/fastcgi-php.conf;
+                fastcgi_pass unix:/run/php/php7.0-fpm.sock;
+                limit_req zone=one burst=5 nodelay;
+
+        }
+        
+        ##
+        # Security Tweaks
+        ##
+        # These are common bots / other bad user agents
+        if ($http_user_agent ~* "PHP|curl|Wget|HTTrack|Nmap|Verifying|PingBack|Pingdom|Joomla|Wordpress") { return 444; }
+
+        # These are normally Joomla based attacks.
+        if ($http_user_agent = "") { return 444; }
+        if ($http_user_agent = " ") { return 444; }
+        if ($http_user_agent = "-") { return 444; }
+        
+        # Block JS LOIC Referers listed in nginx.conf (master configuration file)
+        if ($bad_referer) {
+             return 444;
+        }
+
+}
